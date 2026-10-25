@@ -23,7 +23,7 @@
     "build:action": "ncc build -o lib/action src/entrypoints/action.ts",
     "build:plugin": "ncc build -o claude-plugin/bundle src/entrypoints/cli.ts",
     "test": "jest --coverage",
-    "lint": "eslint src test",
+    "lint": "eslint src test/*.ts",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
   },
   "bin": {
