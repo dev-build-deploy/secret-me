@@ -1,0 +1,25 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: secret-me
+Upstream-Contact: Kevin de Jong <monkaii@hotmail.com>
+Source: https://github.com/dev-build-deploy/secret-me
+
+Files: lib/**
+       claude-plugin/bundle/**
+Copyright: 2026 Kevin de Jong <monkaii@hotmail.com>
+License: MIT
+
+Files: package*.json
+       tsconfig.json
+       .prettierrc.json
+       .github/.commit-me.json
+Copyright: 2026 Kevin de Jong <monkaii@hotmail.com>
+License: CC0-1.0
+
+Files: claude-plugin/.claude-plugin/plugin.json
+       claude-plugin/hooks/hooks.json
+Copyright: 2026 Kevin de Jong <monkaii@hotmail.com>
+License: MIT
+
+Files: test/fixtures/**
+Copyright: 2026 Kevin de Jong <monkaii@hotmail.com>
+License: CC0-1.0

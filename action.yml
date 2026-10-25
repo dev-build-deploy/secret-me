@@ -1,0 +1,15 @@
+# SPDX-FileCopyrightText: 2026 Kevin de Jong <monkaii@hotmail.com>
+# SPDX-License-Identifier: MIT
+
+name: 'SecretMe - secret, token and password leak detection'
+author: 'Kevin de Jong'
+description: >
+  Flags secrets, tokens and passwords in your commits before they leak (gitleaks, with org rules).
+
+branding:
+  icon: 'lock'
+  color: 'white'
+
+runs:
+  using: 'node24'
+  main: 'lib/action/index.js'

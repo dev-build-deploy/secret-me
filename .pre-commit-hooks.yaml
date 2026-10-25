@@ -1,0 +1,11 @@
+# SPDX-FileCopyrightText: 2026 Kevin de Jong <monkaii@hotmail.com>
+# SPDX-License-Identifier: MIT
+
+- id: secret-me
+  name: SecretMe - secret, token and password leak detection
+  description: Scans the staged changes for secrets (gitleaks, with org rules)
+  entry: secret-me scan --staged
+  language: node
+  pass_filenames: false
+  always_run: true
+  stages: [pre-commit]
