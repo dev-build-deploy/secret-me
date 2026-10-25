@@ -1,6 +1,1193 @@
 /******/ (() => { // webpackBootstrap
 /******/ 	var __webpack_modules__ = ({
 
+/***/ 482:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/**
+ * SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Rule = exports.Result = exports.Tool = exports.Run = exports.Log = void 0;
+var log_1 = __nccwpck_require__(578);
+Object.defineProperty(exports, "Log", ({ enumerable: true, get: function () { return log_1.Log; } }));
+var run_1 = __nccwpck_require__(85);
+Object.defineProperty(exports, "Run", ({ enumerable: true, get: function () { return run_1.Run; } }));
+var tool_1 = __nccwpck_require__(228);
+Object.defineProperty(exports, "Tool", ({ enumerable: true, get: function () { return tool_1.Tool; } }));
+var result_1 = __nccwpck_require__(955);
+Object.defineProperty(exports, "Result", ({ enumerable: true, get: function () { return result_1.Result; } }));
+var rule_1 = __nccwpck_require__(64);
+Object.defineProperty(exports, "Rule", ({ enumerable: true, get: function () { return rule_1.Rule; } }));
+
+
+/***/ }),
+
+/***/ 816:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/**
+ * SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ISarif = void 0;
+class ISarif {
+    constructor(data) {
+        this._data = data;
+    }
+    /** Getter for a property by name */
+    get(property) {
+        const properties = Object.keys(this._data);
+        if (properties.includes(property)) {
+            return this._data[property];
+        }
+        throw new Error(`Property '${property}' does not exist.`);
+    }
+    /** Returns all SARIF properties */
+    properties() {
+        return this._data;
+    }
+}
+exports.ISarif = ISarif;
+
+
+/***/ }),
+
+/***/ 578:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+/**
+ * SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || function (mod) {
+    if (mod && mod.__esModule) return mod;
+    var result = {};
+    if (mod != null) for (var k in mod) if (k !== "default" && Object.prototype.hasOwnProperty.call(mod, k)) __createBinding(result, mod, k);
+    __setModuleDefault(result, mod);
+    return result;
+};
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Log = void 0;
+const fs = __importStar(__nccwpck_require__(896));
+const run_1 = __nccwpck_require__(85);
+const interfaces_1 = __nccwpck_require__(816);
+const tool_1 = __nccwpck_require__(228);
+const result_1 = __nccwpck_require__(955);
+/** Static Analysis Results Format (SARIF) Version 2.1.0 */
+class Log extends interfaces_1.ISarif {
+    constructor() {
+        super({
+            $schema: "http://json.schemastore.org/sarif-2.1.0.json",
+            version: "2.1.0",
+            runs: []
+        });
+    }
+    /**
+     * Adds a single run to the SARIF log
+     */
+    addRun(run) {
+        this._data.runs.push(run.properties());
+        return this;
+    }
+    /**
+     * Creates a new SARIF log object from a file
+     *
+     * @param filePath The path to the SARIF file
+     * @returns A new SARIF log object
+     */
+    static fromFile(filePath) {
+        const data = JSON.parse(fs.readFileSync(filePath, { encoding: "utf-8" }));
+        const log = new Log();
+        if (Object.keys(data).includes("runs") && Array.isArray(data.runs)) {
+            for (const sarifRun of data.runs) {
+                const tool = new tool_1.Tool(sarifRun.tool.driver.name, sarifRun.tool.driver);
+                const run = new run_1.Run(tool);
+                if (Object.keys(sarifRun).includes("results") && Array.isArray(sarifRun.results)) {
+                    for (const result of sarifRun.results) {
+                        const res = new result_1.Result(result.message, result);
+                        run.addResult(res);
+                    }
+                }
+                log.addRun(run);
+            }
+        }
+        return log;
+    }
+}
+exports.Log = Log;
+
+
+/***/ }),
+
+/***/ 955:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/**
+ * SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Result = void 0;
+const interfaces_1 = __nccwpck_require__(816);
+/** A result produced by an analysis tool. */
+class Result extends interfaces_1.ISarif {
+    /** A result produced by an analysis tool. */
+    constructor(message, options = {}) {
+        const msg = typeof message === "string" ? { text: message } : message;
+        super({
+            message: msg,
+            ...options
+        });
+    }
+    /** The stable, unique identifier of the rule, if any, to which this result is relevant. */
+    ruleId(ruleId) {
+        this._data.ruleId = ruleId;
+        return this;
+    }
+    /** A value specifying the severity level of the result. */
+    level(level) {
+        this._data.level = level;
+        return this;
+    }
+    /** Encapsulates a message intended to be read by the end user. */
+    message(message) {
+        this._data.message = typeof message === "string" ? { text: message } : message;
+        return this;
+    }
+    /**
+     * Extends the set of locations where the result was detected. Specify only one location
+     * unless the problem indicated by the result can only be corrected by making a change
+     * at every specified location.
+     */
+    addLocation(location) {
+        var _a;
+        if (this._data.locations === undefined) {
+            this._data.locations = [];
+        }
+        this._data.locations.push(location);
+        this._data.occurrenceCount = ((_a = this._data.occurrenceCount) !== null && _a !== void 0 ? _a : 0) + 1;
+        return this;
+    }
+}
+exports.Result = Result;
+
+
+/***/ }),
+
+/***/ 64:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/**
+ * SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Rule = void 0;
+const interfaces_1 = __nccwpck_require__(816);
+/** Metadata that describes a specific report produced by the tool, as part of the analysis it provides or its runtime reporting. */
+class Rule extends interfaces_1.ISarif {
+    /** Metadata that describes a specific report produced by the tool, as part of the analysis it provides or its runtime reporting. */
+    constructor(id, options = {}) {
+        const short = typeof options.shortDescription === "string" ? { text: options.shortDescription } : options.shortDescription;
+        const full = typeof options.fullDescription === "string" ? { text: options.fullDescription } : options.fullDescription;
+        if (short === undefined && full === undefined) {
+            super({ id: id });
+        }
+        else if (short !== undefined && full === undefined) {
+            super({
+                id: id,
+                shortDescription: short
+            });
+        }
+        else if (short === undefined && full !== undefined) {
+            super({
+                id: id,
+                fullDescription: full
+            });
+        }
+        else {
+            super({
+                id: id,
+                shortDescription: short,
+                fullDescription: full
+            });
+        }
+    }
+    /** A report identifier that is understandable to an end user. */
+    name(name) {
+        this._data.name = name;
+        return this;
+    }
+    /**
+     * A concise description of the report. Should be a single sentence that is understandable when visible
+     * space is limited to a single line of text.
+     */
+    shortDescription(shortDescription) {
+        this._data.shortDescription = typeof shortDescription === "string" ? { text: shortDescription } : shortDescription;
+        return this;
+    }
+    /**
+     * A description of the report. Should, as far as possible, provide details sufficient to enable resolution
+     * of any problem indicated by the result.
+     */
+    fullDescription(fullDescription) {
+        this._data.fullDescription = typeof fullDescription === "string" ? { text: fullDescription } : fullDescription;
+        return this;
+    }
+    /** A URI where the primary documentation for the report can be found. */
+    helpUri(helpUri) {
+        this._data.helpUri = helpUri;
+        return this;
+    }
+}
+exports.Rule = Rule;
+
+
+/***/ }),
+
+/***/ 85:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/**
+ * SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Run = void 0;
+const interfaces_1 = __nccwpck_require__(816);
+/** Describes a single run of an analysis tool, and contains the reported output of that run. */
+class Run extends interfaces_1.ISarif {
+    /**
+     * Describes a single run of an analysis tool, and contains the reported output of that run.
+     * @param tool The tool or tool pipeline that generated the results in this run.
+     */
+    constructor(tool) {
+        super({
+            tool: tool.properties()
+        });
+    }
+    /**
+     * Information about the tool or tool pipeline that generated the results in this run. A run can only
+     * contain results produced by a single tool or tool pipeline. A run can aggregate results from multiple
+     * log files, as long as context around the tool run (tool command-line arguments and the like) is
+     * identical for all aggregated files.
+     */
+    tool(tool) {
+        this._data.tool = tool.properties();
+        return this;
+    }
+    /**
+     * Extends the set of results contained in an SARIF log. The results array can be omitted when a run
+     * is solely exporting rules metadata. It must be present (but may be empty) if a log file represents
+     * an actual scan.
+     */
+    addResult(result) {
+        var _a, _b, _c, _d;
+        if (this._data.results === undefined) {
+            this._data.results = [];
+        }
+        for (const item of this._data.results) {
+            if (item.message.text === result.properties().message.text) {
+                (_a = item.locations) === null || _a === void 0 ? void 0 : _a.push(...(_b = result.properties().locations) !== null && _b !== void 0 ? _b : []);
+                item.occurrenceCount = ((_c = item.occurrenceCount) !== null && _c !== void 0 ? _c : 1) + ((_d = result.properties().occurrenceCount) !== null && _d !== void 0 ? _d : 1);
+                return this;
+            }
+        }
+        this._data.results.push(result.properties());
+        return this;
+    }
+}
+exports.Run = Run;
+
+
+/***/ }),
+
+/***/ 228:
+/***/ ((__unused_webpack_module, exports, __nccwpck_require__) => {
+
+"use strict";
+
+/**
+ * SPDX-FileCopyrightText: 2023 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.Tool = void 0;
+const interfaces_1 = __nccwpck_require__(816);
+/** The analysis tool that was run. */
+class Tool extends interfaces_1.ISarif {
+    //private _data: sarif.Tool;
+    constructor(name, options = {}) {
+        super({
+            driver: {
+                name: name,
+                ...options
+            }
+        });
+    }
+    /** The name of the tool component. */
+    name(name) {
+        this._data.driver.name = name;
+        return this;
+    }
+    /** The organization or company that produced the tool component. */
+    organization(organization) {
+        this._data.driver.organization = organization;
+        return this;
+    }
+    /** The tool component version, in whatever format the component natively provides. */
+    version(version) {
+        this._data.driver.version = version;
+        return this;
+    }
+    /** The absolute URI at which information about this version of the tool component can be found. */
+    informationUri(informationUri) {
+        this._data.driver.informationUri = informationUri;
+        return this;
+    }
+    /** Extends the list of rules relevant to the analysis performed by the tool component. */
+    addRule(rule) {
+        if (this._data.driver.rules === undefined) {
+            this._data.driver.rules = [];
+        }
+        if (this._data.driver.rules.some(r => r.id === rule.get("id"))) {
+            this._data.driver.rules = this._data.driver.rules.filter(r => r.id !== rule.get("id"));
+        }
+        this._data.driver.rules.push(rule.properties());
+        return this;
+    }
+    /** Getter for a property by name */
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    get(property) {
+        const properties = Object.keys(this._data.driver);
+        if (properties.includes(property)) {
+            return this._data.driver[property];
+        }
+        throw new Error(`Property '${property}' does not exist.`);
+    }
+}
+exports.Tool = Tool;
+
+
+/***/ }),
+
+/***/ 973:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+/*
+ * SPDX-FileCopyrightText: 2026 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ConfigError = exports.CONFIG_FILE = void 0;
+exports.checkReasons = checkReasons;
+exports.mergeConfig = mergeConfig;
+exports.loadConfig = loadConfig;
+exports.toToml = toToml;
+const fs = __importStar(__nccwpck_require__(24));
+const path = __importStar(__nccwpck_require__(760));
+const smol_toml_1 = __nccwpck_require__(106);
+const defaults_1 = __nccwpck_require__(285);
+/** The repository's configuration file, at its root. */
+exports.CONFIG_FILE = ".secret-me.toml";
+/** A configuration error (exit code 2). */
+class ConfigError extends Error {
+}
+exports.ConfigError = ConfigError;
+function asArray(value) {
+    if (value === undefined)
+        return [];
+    if (!Array.isArray(value))
+        throw new ConfigError("rules and allowlists must be TOML arrays of tables ([[rules]], [[allowlists]])");
+    return value;
+}
+/** Every allowlist entry (also those nested in a rule) must say why the value is safe. */
+function checkReasons(config, source) {
+    const check = (entry, where) => {
+        const reason = entry.description;
+        if (typeof reason !== "string" || reason.trim() === "") {
+            throw new ConfigError(`${source}: ${where} has no description; every allowlist entry needs the reason it is safe`);
+        }
+    };
+    asArray(config.allowlists).forEach((a, i) => check(a, `[[allowlists]] #${i + 1}`));
+    if (config.allowlist !== undefined)
+        check(config.allowlist, "[allowlist]");
+    asArray(config.rules).forEach(rule => {
+        asArray(rule.allowlists).forEach((a, i) => check(a, `rule ${String(rule.id)}: [[rules.allowlists]] #${i + 1}`));
+    });
+}
+/**
+ * Merges the org defaults with the repository's configuration (rules and allowlists are appended) and tells
+ * gitleaks to extend its own default rules.
+ */
+function mergeConfig(repoToml, repoSource = exports.CONFIG_FILE) {
+    const defaults = (0, smol_toml_1.parse)(defaults_1.DEFAULT_CONFIG);
+    let repo = {};
+    if (repoToml !== undefined) {
+        try {
+            repo = (0, smol_toml_1.parse)(repoToml);
+        }
+        catch (error) {
+            throw new ConfigError(`${repoSource}: ${error.message}`);
+        }
+        checkReasons(repo, repoSource);
+    }
+    const allowlists = [...asArray(defaults.allowlists), ...asArray(repo.allowlists)];
+    if (repo.allowlist !== undefined)
+        allowlists.push(repo.allowlist);
+    return {
+        title: "secret-me",
+        extend: { useDefault: true },
+        rules: [...asArray(defaults.rules), ...asArray(repo.rules)],
+        allowlists,
+    };
+}
+/** Reads `.secret-me.toml` (or the given file) from the folder and merges it; a missing default file is fine. */
+function loadConfig(root, file) {
+    const target = path.resolve(root, file ?? exports.CONFIG_FILE);
+    if (!fs.existsSync(target)) {
+        if (file)
+            throw new ConfigError(`configuration file not found: ${file}`);
+        return mergeConfig();
+    }
+    return mergeConfig(fs.readFileSync(target, "utf8"), path.relative(root, target) || exports.CONFIG_FILE);
+}
+/** The merged configuration as the TOML gitleaks reads. */
+function toToml(config) {
+    return (0, smol_toml_1.stringify)(config);
+}
+
+
+/***/ }),
+
+/***/ 285:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/*
+ * SPDX-FileCopyrightText: 2026 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.DEFAULT_CONFIG = void 0;
+/**
+ * The org rules and the org allowlist, in gitleaks' own TOML schema. They are merged with gitleaks' default rules
+ * (`useDefault`) and with the repository's `.secret-me.toml` (see docs/config.md).
+ *
+ * Every allowlist entry carries a `description`: the reason this value is safe to ignore.
+ */
+exports.DEFAULT_CONFIG = String.raw `
+title = "secret-me"
+
+[[rules]]
+id = "secret-me-anthropic-key"
+description = "Anthropic API key"
+regex = '''sk-ant-[a-z0-9]{2,8}-[A-Za-z0-9_\-]{20,}'''
+keywords = ["sk-ant-"]
+
+[[rules]]
+id = "secret-me-github-token"
+description = "GitHub token (personal, OAuth, user-to-server, server-to-server, refresh, fine-grained)"
+regex = '''\b(?:gh[pousr]_[A-Za-z0-9]{30,255}|github_pat_[A-Za-z0-9_]{50,255})\b'''
+keywords = ["ghp_", "gho_", "ghu_", "ghs_", "ghr_", "github_pat_"]
+
+[[rules]]
+id = "secret-me-private-key"
+description = "Private key block"
+regex = '''-----BEGIN[ A-Z0-9]*PRIVATE KEY(?: BLOCK)?-----\s*(?:[A-Za-z0-9+/=:,. -]+\s+)?([A-Za-z0-9+/=]{16,})'''
+secretGroup = 1
+keywords = ["private key"]
+
+[[rules]]
+id = "secret-me-env-file"
+description = "A .env file (it holds secrets by design; keep it out of git)"
+path = '''(?:^|/)\.env(?:\.[A-Za-z0-9_-]+)?$'''
+  [[rules.allowlists]]
+  description = ".env.example and friends are templates, not secrets"
+  paths = ['''\.(?:example|sample|template|dist|defaults?)$''']
+
+[[rules]]
+id = "secret-me-url-credentials"
+description = "Password in a URL (scheme://user:password@host)"
+regex = '''[A-Za-z][A-Za-z0-9+.-]*://[^\s:@/"'<>]+:([^\s@/"'<>$][^\s@/"'<>]{2,})@[A-Za-z0-9.\-\[\]]+'''
+secretGroup = 1
+entropy = 2.0
+keywords = ["://"]
+  [[rules.allowlists]]
+  description = "Placeholders and variable references in URLs"
+  regexes = ['''^(?i:pass(?:w(?:or)?d)?|changeme|secret|x+|\*+|\{\{.*|%s)$''']
+  stopwords = ["changeme", "example"]
+
+[[rules]]
+id = "secret-me-password-assignment"
+description = "Quoted password, secret, token or key assigned in code or config"
+regex = '''(?i)\b[\w.-]*(?:password|passwd|pwd|secret|api[_-]?key|access[_-]?key|auth[_-]?token|token|credential)s?["']?\s*[:=]\s*["']([^\s"'$<>{}()\[\]][^\s"']{7,})["']'''
+secretGroup = 1
+entropy = 3.3
+keywords = ["password", "passwd", "pwd", "secret", "key", "token", "credential"]
+  [[rules.allowlists]]
+  description = "Placeholders, test values and references"
+  stopwords = ["example", "changeme", "placeholder", "your_", "your-", "xxxxxxxx", "process.env", "secrets.", "env."]
+
+[[rules]]
+id = "secret-me-config-assignment"
+description = "Unquoted password, secret, token or key in an env, ini, yaml or properties file"
+regex = '''(?im)^\s*(?:export\s+)?[\w.-]*(?:password|passwd|secret|api[_-]?key|access[_-]?key|auth[_-]?token|token|credential)s?\s*[:=]\s*([^\s"'$<>{}()\[\],;#][^\s"',;#]{7,})\s*$'''
+secretGroup = 1
+entropy = 3.5
+keywords = ["password", "passwd", "secret", "key", "token", "credential"]
+path = '''(?:^|/)(?:\.env[^/]*|[^/]*\.(?:env|ini|cfg|conf|properties|toml|ya?ml|json|tfvars))$'''
+  [[rules.allowlists]]
+  description = "Placeholders and references"
+  stopwords = ["example", "changeme", "placeholder", "your_", "your-", "process.env", "secrets."]
+
+[[allowlists]]
+description = "Azure Storage emulator (Azurite) well-known development account key, published in Microsoft's docs and bundled in @azure/storage-blob"
+regexes = ['''Eby8vdM02xNOcqFlqUwJPLlmEtlCDXJ1OUzFT50uSRZ6IFsuFq2UVErCz4I6tq/K1SZFPTOtr/KBHBeksoGMGw==''']
+
+[[allowlists]]
+description = "Installed dependencies are not ours to scan (their lockfiles and bundles are covered by their publishers)"
+paths = ['''(?:^|/)node_modules/''']
+`;
+
+
+/***/ }),
+
+/***/ 921:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+/*
+ * SPDX-FileCopyrightText: 2026 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+const fs = __importStar(__nccwpck_require__(24));
+const commander_1 = __nccwpck_require__(909);
+const config_1 = __nccwpck_require__(973);
+const finding_1 = __nccwpck_require__(18);
+const sarif_1 = __nccwpck_require__(866);
+const scanner_1 = __nccwpck_require__(105);
+const version_1 = __nccwpck_require__(311);
+function chooseTarget(flags) {
+    const modes = [flags.staged, flags.diff, flags.outgoing, flags.history, flags.path, flags.stdin].filter(Boolean);
+    if (modes.length > 1) {
+        throw new scanner_1.ScanError("choose one of --staged, --diff, --outgoing, --history, --path, --stdin");
+    }
+    if (flags.staged)
+        return { kind: "staged" };
+    if (flags.diff)
+        return { kind: "range", range: flags.diff };
+    if (flags.outgoing)
+        return { kind: "outgoing" };
+    if (flags.history)
+        return { kind: "history" };
+    if (flags.stdin) {
+        if (!flags.name)
+            throw new scanner_1.ScanError("--stdin needs --name <file> (the path the content is written to)");
+        return { kind: "stdin", name: flags.name, content: fs.readFileSync(0, "utf8") };
+    }
+    return { kind: "path", path: flags.path ?? "." };
+}
+const program = new commander_1.Command();
+program
+    .name("secret-me")
+    .description("Flags secrets, tokens and passwords before they leave your machine (gitleaks, with org rules)")
+    .version(version_1.VERSION);
+program
+    .command("scan")
+    .description("Scan for secrets; exit 1 on findings, 2 on errors. Values are always redacted.")
+    .option("--staged", "the staged changes (pre-commit)")
+    .option("--diff <range>", "the commits in a git range, e.g. origin/main..HEAD")
+    .option("--outgoing", "the commits no remote has yet (what a push would send)")
+    .option("--history", "the whole git history")
+    .option("--path <path>", "a file or folder, as it is on disk (default: .)")
+    .option("--stdin", "content on stdin, scanned as the file --name")
+    .option("--name <file>", "with --stdin: the path the content stands for")
+    .option("--json", "machine-readable output")
+    .option("--sarif <file>", "also write a SARIF 2.1.0 report")
+    .option("--config <file>", "configuration file (default: .secret-me.toml)")
+    .action(async (flags) => {
+    try {
+        const findings = await (0, scanner_1.scan)(chooseTarget(flags), { config: flags.config });
+        if (flags.sarif)
+            fs.writeFileSync(flags.sarif, JSON.stringify((0, sarif_1.toSarif)(findings), null, 2));
+        if (flags.json) {
+            process.stdout.write(`${JSON.stringify({ tool: "secret-me", version: version_1.VERSION, count: findings.length, findings })}\n`);
+        }
+        else {
+            process.stdout.write((0, finding_1.formatText)(findings));
+        }
+        process.exitCode = findings.length > 0 ? 1 : 0;
+    }
+    catch (error) {
+        process.stderr.write(`secret-me: error: ${error.message}\n`);
+        process.exitCode = 2;
+    }
+});
+program
+    .command("config")
+    .description("Print the effective configuration (org rules + allowlist + .secret-me.toml) as gitleaks TOML")
+    .option("--config <file>", "configuration file (default: .secret-me.toml)")
+    .action((flags) => {
+    try {
+        process.stdout.write((0, config_1.toToml)((0, config_1.loadConfig)(process.cwd(), flags.config)));
+    }
+    catch (error) {
+        process.stderr.write(`secret-me: error: ${error.message}\n`);
+        process.exitCode = 2;
+    }
+});
+program.parseAsync().catch((error) => {
+    process.stderr.write(`secret-me: error: ${error.message}\n`);
+    process.exitCode = 2;
+});
+
+
+/***/ }),
+
+/***/ 18:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+
+/*
+ * SPDX-FileCopyrightText: 2026 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ROTATE_NOTE = void 0;
+exports.redact = redact;
+exports.formatText = formatText;
+exports.ROTATE_NOTE = "already pushed: rotate it first (revoke and reissue), then clean the history";
+/** The first 4 characters, then `****` (at most half of a short value, so it never reveals it). */
+function redact(secret) {
+    const keep = Math.min(4, Math.floor(secret.length / 2));
+    return `${secret.slice(0, keep)}****`;
+}
+/** One line per finding, compact for people and LLMs. */
+function formatText(findings) {
+    if (findings.length === 0)
+        return "secret-me: no secrets found\n";
+    const lines = [`secret-me: ${findings.length} ${findings.length === 1 ? "secret" : "secrets"} found`];
+    for (const f of findings) {
+        const where = f.line > 0 ? `${f.file}:${f.line}` : f.file;
+        const commit = f.commit ? ` commit ${f.commit.slice(0, 8)}` : "";
+        lines.push(`  ${where}  ${f.rule}  ${f.redacted}${commit}${f.note ? `  (${f.note})` : ""}`);
+    }
+    return `${lines.join("\n")}\n`;
+}
+
+
+/***/ }),
+
+/***/ 259:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+/*
+ * SPDX-FileCopyrightText: 2026 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.GITLEAKS_CHECKSUMS = exports.GITLEAKS_VERSION = void 0;
+exports.compareVersions = compareVersions;
+exports.platformAsset = platformAsset;
+exports.cacheDir = cacheDir;
+exports.binaryVersion = binaryVersion;
+exports.resolveGitleaks = resolveGitleaks;
+const node_child_process_1 = __nccwpck_require__(421);
+const node_crypto_1 = __nccwpck_require__(598);
+const fs = __importStar(__nccwpck_require__(24));
+const os = __importStar(__nccwpck_require__(161));
+const path = __importStar(__nccwpck_require__(760));
+const node_util_1 = __nccwpck_require__(975);
+const run = (0, node_util_1.promisify)(node_child_process_1.execFile);
+/** The gitleaks release secret-me is built and tested against. */
+exports.GITLEAKS_VERSION = "8.30.1";
+/** SHA-256 of each release archive, from gitleaks_8.30.1_checksums.txt of the release. */
+exports.GITLEAKS_CHECKSUMS = {
+    "darwin_arm64.tar.gz": "b40ab0ae55c505963e365f271a8d3846efbc170aa17f2607f13df610a9aeb6a5",
+    "darwin_x64.tar.gz": "dfe101a4db2255fc85120ac7f3d25e4342c3c20cf749f2c20a18081af1952709",
+    "linux_arm64.tar.gz": "e4a487ee7ccd7d3a7f7ec08657610aa3606637dab924210b3aee62570fb4b080",
+    "linux_x64.tar.gz": "551f6fc83ea457d62a0d98237cbad105af8d557003051f41f3e7ca7b3f2470eb",
+    "windows_arm64.zip": "b95f5e4f5c425cedca7ee203d9afd29597e692c4924a12ed42f970537c72cc0f",
+    "windows_x64.zip": "d29144deff3a68aa93ced33dddf84b7fdc26070add4aa0f4513094c8332afc4e",
+};
+/** Compares dotted versions: negative when a < b. */
+function compareVersions(a, b) {
+    const pa = a.replace(/^v/, "").split(".").map(Number);
+    const pb = b.replace(/^v/, "").split(".").map(Number);
+    for (let i = 0; i < Math.max(pa.length, pb.length); i++) {
+        const d = (pa[i] ?? 0) - (pb[i] ?? 0);
+        if (d !== 0)
+            return d;
+    }
+    return 0;
+}
+/** The archive suffix of this platform, as keyed in GITLEAKS_CHECKSUMS. */
+function platformAsset(platform = process.platform, arch = process.arch) {
+    const os_ = platform === "win32" ? "windows" : platform;
+    const cpu = arch === "x64" ? "x64" : arch === "arm64" ? "arm64" : arch;
+    const suffix = `${os_}_${cpu}.${platform === "win32" ? "zip" : "tar.gz"}`;
+    if (!(suffix in exports.GITLEAKS_CHECKSUMS))
+        throw new Error(`no gitleaks release for ${platform}/${arch}`);
+    return suffix;
+}
+/** The cache folder of the pinned gitleaks binary (override with SECRET_ME_CACHE). */
+function cacheDir() {
+    const base = process.env.SECRET_ME_CACHE ??
+        path.join(process.env.XDG_CACHE_HOME ?? path.join(os.homedir(), ".cache"), "secret-me");
+    return path.join(base, `gitleaks-${exports.GITLEAKS_VERSION}`);
+}
+/** The version of a gitleaks binary, or undefined when it does not run. */
+async function binaryVersion(bin) {
+    try {
+        const { stdout } = await run(bin, ["version"]);
+        return /\d+\.\d+\.\d+/.exec(stdout)?.[0];
+    }
+    catch {
+        return undefined;
+    }
+}
+async function download(url) {
+    const res = await fetch(url, { redirect: "follow" });
+    if (!res.ok)
+        throw new Error(`download failed (${res.status}): ${url}`);
+    return Buffer.from(await res.arrayBuffer());
+}
+/**
+ * Finds the gitleaks to run: SECRET_ME_GITLEAKS, else one on the PATH that is at least the pinned version, else the
+ * pinned release from GitHub (SHA-256 verified against GITLEAKS_CHECKSUMS) cached under the user's cache folder.
+ */
+async function resolveGitleaks() {
+    const candidates = [process.env.SECRET_ME_GITLEAKS, "gitleaks"].filter((c) => !!c);
+    for (const bin of candidates) {
+        const v = await binaryVersion(bin);
+        if (v && compareVersions(v, exports.GITLEAKS_VERSION) >= 0)
+            return bin;
+    }
+    const dir = cacheDir();
+    const bin = path.join(dir, process.platform === "win32" ? "gitleaks.exe" : "gitleaks");
+    if ((await binaryVersion(bin)) === exports.GITLEAKS_VERSION)
+        return bin;
+    const suffix = platformAsset();
+    const url = `https://github.com/gitleaks/gitleaks/releases/download/v${exports.GITLEAKS_VERSION}/gitleaks_${exports.GITLEAKS_VERSION}_${suffix}`;
+    const archive = await download(url);
+    const sum = (0, node_crypto_1.createHash)("sha256").update(archive).digest("hex");
+    if (sum !== exports.GITLEAKS_CHECKSUMS[suffix]) {
+        throw new Error(`checksum mismatch for ${url} (got ${sum}); refusing to run it`);
+    }
+    fs.mkdirSync(dir, { recursive: true });
+    const archivePath = path.join(dir, `archive.${suffix.endsWith(".zip") ? "zip" : "tar.gz"}`);
+    fs.writeFileSync(archivePath, archive);
+    await run("tar", ["-xf", archivePath, "-C", dir, path.basename(bin)]);
+    fs.rmSync(archivePath);
+    fs.chmodSync(bin, 0o755);
+    return bin;
+}
+
+
+/***/ }),
+
+/***/ 866:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+/*
+ * SPDX-FileCopyrightText: 2026 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.toSarif = toSarif;
+const sarif = __importStar(__nccwpck_require__(482));
+const version_1 = __nccwpck_require__(311);
+/** The findings as a SARIF 2.1.0 log (for GitHub code scanning). Values stay redacted. */
+function toSarif(findings) {
+    const tool = new sarif.Tool("secret-me")
+        .organization("dev-build-deploy")
+        .version(version_1.VERSION)
+        .informationUri("https://github.com/dev-build-deploy/secret-me#readme");
+    const seen = new Set();
+    for (const f of findings) {
+        if (seen.has(f.rule))
+            continue;
+        seen.add(f.rule);
+        tool.addRule(new sarif.Rule(f.rule).name(f.rule).shortDescription(f.description));
+    }
+    const run = new sarif.Run(tool);
+    for (const f of findings) {
+        const rotate = f.note ? `; ${f.note}` : "";
+        run.addResult(new sarif.Result(`${f.description}: ${f.redacted}${rotate}`, { level: "error", ruleId: f.rule }).addLocation({
+            physicalLocation: {
+                artifactLocation: { uri: f.file },
+                region: { startLine: Math.max(f.line, 1) },
+            },
+        }));
+    }
+    return new sarif.Log().addRun(run).properties();
+}
+
+
+/***/ }),
+
+/***/ 105:
+/***/ (function(__unused_webpack_module, exports, __nccwpck_require__) {
+
+"use strict";
+
+/*
+ * SPDX-FileCopyrightText: 2026 Kevin de Jong <monkaii@hotmail.com>
+ * SPDX-License-Identifier: MIT
+ */
+var __createBinding = (this && this.__createBinding) || (Object.create ? (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    var desc = Object.getOwnPropertyDescriptor(m, k);
+    if (!desc || ("get" in desc ? !m.__esModule : desc.writable || desc.configurable)) {
+      desc = { enumerable: true, get: function() { return m[k]; } };
+    }
+    Object.defineProperty(o, k2, desc);
+}) : (function(o, m, k, k2) {
+    if (k2 === undefined) k2 = k;
+    o[k2] = m[k];
+}));
+var __setModuleDefault = (this && this.__setModuleDefault) || (Object.create ? (function(o, v) {
+    Object.defineProperty(o, "default", { enumerable: true, value: v });
+}) : function(o, v) {
+    o["default"] = v;
+});
+var __importStar = (this && this.__importStar) || (function () {
+    var ownKeys = function(o) {
+        ownKeys = Object.getOwnPropertyNames || function (o) {
+            var ar = [];
+            for (var k in o) if (Object.prototype.hasOwnProperty.call(o, k)) ar[ar.length] = k;
+            return ar;
+        };
+        return ownKeys(o);
+    };
+    return function (mod) {
+        if (mod && mod.__esModule) return mod;
+        var result = {};
+        if (mod != null) for (var k = ownKeys(mod), i = 0; i < k.length; i++) if (k[i] !== "default") __createBinding(result, mod, k[i]);
+        __setModuleDefault(result, mod);
+        return result;
+    };
+})();
+Object.defineProperty(exports, "__esModule", ({ value: true }));
+exports.ScanError = void 0;
+exports.repoRoot = repoRoot;
+exports.scan = scan;
+const node_child_process_1 = __nccwpck_require__(421);
+const fs = __importStar(__nccwpck_require__(24));
+const os = __importStar(__nccwpck_require__(161));
+const path = __importStar(__nccwpck_require__(760));
+const node_util_1 = __nccwpck_require__(975);
+const config_1 = __nccwpck_require__(973);
+const finding_1 = __nccwpck_require__(18);
+const gitleaks_1 = __nccwpck_require__(259);
+const run = (0, node_util_1.promisify)(node_child_process_1.execFile);
+/** An error that is not a finding (exit code 2). */
+class ScanError extends Error {
+}
+exports.ScanError = ScanError;
+async function git(cwd, args) {
+    const { stdout } = await run("git", args, { cwd, maxBuffer: 64 * 1024 * 1024 });
+    return stdout.trim();
+}
+/** The root of the git repository around `cwd`, or `cwd` itself outside one. */
+async function repoRoot(cwd) {
+    try {
+        return await git(cwd, ["rev-parse", "--show-toplevel"]);
+    }
+    catch {
+        return path.resolve(cwd);
+    }
+}
+/** Whether a commit is reachable from a remote-tracking branch (it has left this machine). */
+async function isPushed(cwd, commit) {
+    try {
+        return (await git(cwd, ["for-each-ref", "--contains", commit, "--count=1", "refs/remotes"])) !== "";
+    }
+    catch {
+        return false;
+    }
+}
+function gitleaksArgs(target, cwd) {
+    switch (target.kind) {
+        case "staged":
+            return ["git", "--staged", "--pre-commit", "."];
+        case "range":
+            return ["git", `--log-opts=${target.range}`, "."];
+        case "outgoing":
+            return ["git", "--log-opts=HEAD --not --remotes", "."];
+        case "history":
+            return ["git", "."];
+        case "path":
+            return ["dir", path.relative(cwd, path.resolve(cwd, target.path)) || "."];
+        case "stdin":
+            return ["dir", "."];
+    }
+}
+/**
+ * Scans the target with the pinned gitleaks and the merged secret-me configuration.
+ * Findings are deduplicated per line (a gitleaks and a secret-me rule on the same line report once, the secret-me
+ * rule wins) and redacted.
+ */
+async function scan(target, options = {}) {
+    const start = path.resolve(options.cwd ?? process.cwd());
+    const root = await repoRoot(start);
+    const work = fs.mkdtempSync(path.join(os.tmpdir(), "secret-me-"));
+    try {
+        const bin = await (0, gitleaks_1.resolveGitleaks)().catch((e) => {
+            throw new ScanError(`cannot get gitleaks: ${e.message}`);
+        });
+        const configPath = path.join(work, "gitleaks.toml");
+        fs.writeFileSync(configPath, (0, config_1.toToml)((0, config_1.loadConfig)(root, options.config)), { mode: 0o600 });
+        let cwd = root;
+        let staged;
+        if (target.kind === "stdin") {
+            // The content is scanned under its own relative path, so path rules and path allowlists apply to it.
+            const abs = path.resolve(start, target.name);
+            const rel = abs.startsWith(root + path.sep) ? path.relative(root, abs) : path.basename(abs);
+            staged = path.join(work, "files");
+            fs.mkdirSync(path.dirname(path.join(staged, rel)), { recursive: true });
+            fs.writeFileSync(path.join(staged, rel), target.content, { mode: 0o600 });
+            cwd = staged;
+        }
+        else if (target.kind === "path") {
+            cwd = root;
+        }
+        const reportPath = path.join(work, "report.json");
+        const args = [
+            ...gitleaksArgs(target, cwd),
+            "--config",
+            configPath,
+            "--report-format",
+            "json",
+            "--report-path",
+            reportPath,
+            "--exit-code",
+            "0",
+            "--no-banner",
+            "--no-color",
+            "--log-level",
+            "error",
+        ];
+        // The repository's .gitleaksignore is honoured by gitleaks; findings never reach the logs (no --verbose).
+        try {
+            await run(bin, args, { cwd, maxBuffer: 64 * 1024 * 1024 });
+        }
+        catch (error) {
+            const e = error;
+            throw new ScanError(`gitleaks failed: ${(e.stderr || e.message).split("\n").slice(0, 3).join(" ").trim()}`);
+        }
+        const raw = JSON.parse(fs.readFileSync(reportPath, "utf8") || "[]");
+        return await toFindings(raw ?? [], root, options.assumePushed ?? false);
+    }
+    finally {
+        fs.rmSync(work, { recursive: true, force: true });
+    }
+}
+async function toFindings(raw, root, assumePushed) {
+    const pushedCache = new Map();
+    const byValue = new Map();
+    for (const r of raw) {
+        const key = `${r.Commit}|${r.File}|${r.StartLine}`;
+        const existing = byValue.get(key);
+        if (existing && (existing.rule.startsWith("secret-me-") || !r.RuleID.startsWith("secret-me-")))
+            continue;
+        let pushed = assumePushed && r.Commit !== "";
+        if (!pushed && r.Commit) {
+            if (!pushedCache.has(r.Commit))
+                pushedCache.set(r.Commit, await isPushed(root, r.Commit));
+            pushed = pushedCache.get(r.Commit) === true;
+        }
+        byValue.set(key, {
+            rule: r.RuleID,
+            description: r.Description,
+            file: r.File.replaceAll("\\", "/"),
+            line: r.StartLine,
+            commit: r.Commit,
+            redacted: (0, finding_1.redact)(r.Secret),
+            pushed,
+            ...(pushed ? { note: finding_1.ROTATE_NOTE } : {}),
+        });
+    }
+    return [...byValue.values()].sort((a, b) => a.file.localeCompare(b.file) || a.line - b.line || a.rule.localeCompare(b.rule));
+}
+
+
+/***/ }),
+
 /***/ 311:
 /***/ ((__unused_webpack_module, exports) => {
 
@@ -18,11 +1205,27 @@ exports.VERSION = "0.0.1";
 
 /***/ }),
 
+/***/ 896:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("fs");
+
+/***/ }),
+
 /***/ 421:
 /***/ ((module) => {
 
 "use strict";
 module.exports = require("node:child_process");
+
+/***/ }),
+
+/***/ 598:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:crypto");
 
 /***/ }),
 
@@ -42,6 +1245,14 @@ module.exports = require("node:fs");
 
 /***/ }),
 
+/***/ 161:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:os");
+
+/***/ }),
+
 /***/ 760:
 /***/ ((module) => {
 
@@ -55,6 +1266,14 @@ module.exports = require("node:path");
 
 "use strict";
 module.exports = require("node:process");
+
+/***/ }),
+
+/***/ 975:
+/***/ ((module) => {
+
+"use strict";
+module.exports = require("node:util");
 
 /***/ }),
 
@@ -3777,6 +4996,785 @@ function suggestSimilar(word, candidates) {
 exports.suggestSimilar = suggestSimilar;
 
 
+/***/ }),
+
+/***/ 106:
+/***/ ((__unused_webpack_module, exports) => {
+
+"use strict";
+/*!
+* Copyright (c) Squirrel Chat et al., All rights reserved.
+* SPDX-License-Identifier: BSD-3-Clause
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* 1. Redistributions of source code must retain the above copyright notice, this
+*    list of conditions and the following disclaimer.
+* 2. Redistributions in binary form must reproduce the above copyright notice,
+*    this list of conditions and the following disclaimer in the
+*    documentation and/or other materials provided with the distribution.
+* 3. Neither the name of the copyright holder nor the names of its contributors
+*    may be used to endorse or promote products derived from this software without
+*    specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+* ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+* WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+* DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+* FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+* DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+* CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+* OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+* OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+*/
+
+Object.defineProperties(exports, {
+	__esModule: { value: true },
+	[Symbol.toStringTag]: { value: "Module" }
+});
+//#region src/error.ts
+function getLineColFromPtr(string, ptr) {
+	let lines = string.slice(0, ptr).split(/\r?\n/);
+	return [lines.length, lines.pop().length + 1];
+}
+function makeCodeBlock(string, line, column) {
+	let lines = string.split(/\r?\n/);
+	let codeblock = "";
+	let numberLen = (Math.log10(line + 1) | 0) + 1;
+	for (let i = line - 1; i <= line + 1; i++) {
+		let l = lines[i - 1];
+		if (!l) continue;
+		codeblock += i.toString().padEnd(numberLen, " ");
+		codeblock += ":  ";
+		codeblock += l;
+		codeblock += "\n";
+		if (i === line) {
+			codeblock += " ".repeat(numberLen + column + 2);
+			codeblock += "^\n";
+		}
+	}
+	return codeblock;
+}
+var TomlError = class TomlError extends Error {
+	line;
+	column;
+	codeblock;
+	constructor(message, options) {
+		const [line, column] = getLineColFromPtr(options.toml, options.ptr);
+		const codeblock = makeCodeBlock(options.toml, line, column);
+		super(`Invalid TOML document: ${message}\n\n${codeblock}`, options);
+		this.line = line;
+		this.column = column;
+		this.codeblock = codeblock;
+	}
+	/** @internal */
+	static x(message, ctx, ptr) {
+		throw new TomlError(message, {
+			toml: ctx.s,
+			ptr: ptr ?? ctx.p
+		});
+	}
+};
+//#endregion
+//#region src/primitive.ts
+/** @internal */
+function parseString(ctx) {
+	let startPtr = ctx.p;
+	let c = ctx.s.charCodeAt(ctx.p++);
+	let first = c;
+	let isLiteral = c === 39;
+	let isMultiline = c === ctx.s.charCodeAt(ctx.p) && c === ctx.s.charCodeAt(ctx.p + 1);
+	if (isMultiline) {
+		if ((c = ctx.s.charCodeAt(ctx.p += 2)) === 10) ctx.p++;
+		else if (c === 13 && ctx.s.charCodeAt(ctx.p + 1) === 10) ctx.p += 2;
+	}
+	let parsed = "";
+	let sliceStart = ctx.p;
+	let state = 0;
+	for (; ctx.p < ctx.s.length; ctx.p++) {
+		c = ctx.s.charCodeAt(ctx.p);
+		if (isMultiline && (c === 10 || c === 13 && ctx.s.charCodeAt(ctx.p + 1) === 10)) state = state && 3;
+		else if (c < 32 && c !== 9 || c === 127) TomlError.x("control characters are not allowed in strings", ctx);
+		else if ((!state || state === 3) && c === first && (!isMultiline || ctx.s.charCodeAt(ctx.p + 1) === first && ctx.s.charCodeAt(ctx.p + 2) === first)) {
+			if (isMultiline) {
+				if (ctx.s.charCodeAt(ctx.p + 3) === first) ctx.p++;
+				if (ctx.s.charCodeAt(ctx.p + 3) === first) ctx.p++;
+			}
+			if (!state) {
+				let s = ctx.s.slice(sliceStart, ctx.p);
+				parsed = parsed ? parsed + s : s;
+			}
+			ctx.p += isMultiline ? 3 : 1;
+			return parsed;
+		} else if (!state) {
+			if (!isLiteral && c === 92) {
+				parsed += ctx.s.slice(sliceStart, sliceStart = ctx.p);
+				state = 1;
+			}
+		} else if (state === 1) {
+			if (c === 120 || c === 117 || c === 85) {
+				let errPtr = ctx.p++ - 1;
+				let value = 0;
+				let len = c === 120 ? 2 : c === 117 ? 4 : 8;
+				for (let j = 0; j < len; j++, ctx.p++) {
+					let hex = ctx.s.charCodeAt(ctx.p);
+					let digit = hex >= 48 && hex <= 57 ? hex - 48 : hex >= 65 && hex <= 70 ? hex - 65 + 10 : hex >= 97 && hex <= 102 ? hex - 97 + 10 : -1;
+					if (digit < 0) TomlError.x("invalid non-hex character in unicode escape", ctx);
+					value = value << 4 | digit;
+				}
+				if (value < 0 || value > 1114111 || value >= 55296 && value <= 57343) TomlError.x("invalid unicode escape", ctx, errPtr);
+				parsed += String.fromCodePoint(value);
+				sliceStart = ctx.p--;
+				state = 0;
+			} else if (isMultiline && (c === 32 || c === 9)) state = 2;
+			else {
+				if (c === 98) parsed += "\b";
+				else if (c === 116) parsed += "	";
+				else if (c === 110) parsed += "\n";
+				else if (c === 102) parsed += "\f";
+				else if (c === 114) parsed += "\r";
+				else if (c === 101) parsed += "\x1B";
+				else if (c === 34) parsed += "\"";
+				else if (c === 92) parsed += "\\";
+				else TomlError.x("unrecognised escape sequence", ctx);
+				sliceStart = ctx.p + 1;
+				state = 0;
+			}
+		} else if (c !== 32 && c !== 9) {
+			if (state === 2) TomlError.x("invalid escape: only line-ending whitespace may be escaped", ctx, sliceStart);
+			state = !isLiteral && c === 92 ? 1 : 0;
+			sliceStart = ctx.p;
+		}
+	}
+	TomlError.x("unfinished string", ctx, startPtr);
+}
+//#endregion
+//#region src/date.ts
+let DATE_TIME_RE = /^(\d{4}-\d{2}-\d{2})?[Tt ]?(?:(\d{2}):\d{2}(?::\d{2}(?:\.\d+)?)?)?(Z|z|[-+]\d{2}:\d{2})?$/i;
+var TomlDate = class TomlDate extends Date {
+	#hasDate = false;
+	#hasTime = false;
+	#offset = null;
+	constructor(date, fasttype, unsafeDelim) {
+		let hasDate = true;
+		let hasTime = true;
+		let offset = "Z";
+		let c;
+		if (typeof date === "string") {
+			if (fasttype) prep: {
+				if (fasttype < 3) {
+					if (+date.slice(11, 13) > 23) {
+						date = "";
+						break prep;
+					}
+					if (fasttype === 2) {
+						offset = null;
+						date += "Z";
+					} else if ((c = date.charCodeAt(date.length - 1)) !== 90 && c !== 122) offset = date.slice(date.length - 6);
+					if (unsafeDelim) date = date.slice(0, 10) + "T" + date.slice(11);
+				} else if (fasttype === 4) date = +date.slice(0, 2) > 23 ? "" : `0000-01-01T${date}Z`;
+				hasDate = fasttype !== 4;
+				hasTime = fasttype !== 3;
+			}
+			else {
+				let match = date.match(DATE_TIME_RE);
+				if (match) {
+					if (!match[1]) {
+						hasDate = false;
+						date = `0000-01-01T${date}`;
+					}
+					hasTime = !!match[2];
+					hasTime && date[10] === " " && (date = date.replace(" ", "T"));
+					if (match[2] && +match[2] > 23) date = "";
+					else {
+						offset = match[3] || null;
+						if (!offset && hasTime) date += "Z";
+					}
+				} else date = "";
+			}
+		}
+		super(date);
+		if (!isNaN(this.getTime())) {
+			this.#hasDate = hasDate;
+			this.#hasTime = hasTime;
+			this.#offset = offset;
+		}
+	}
+	isDateTime() {
+		return this.#hasDate && this.#hasTime;
+	}
+	isLocal() {
+		return !this.#hasDate || !this.#hasTime || !this.#offset;
+	}
+	isDate() {
+		return this.#hasDate && !this.#hasTime;
+	}
+	isTime() {
+		return this.#hasTime && !this.#hasDate;
+	}
+	isValid() {
+		return this.#hasDate || this.#hasTime;
+	}
+	toISOString() {
+		let iso = super.toISOString();
+		if (this.isDate()) return iso.slice(0, 10);
+		if (this.isTime()) return iso.slice(11, 23);
+		if (this.#offset === null) return iso.slice(0, -1);
+		if (this.#offset === "Z" || this.#offset === "z") return iso;
+		let offset = +this.#offset.slice(1, 3) * 60 + +this.#offset.slice(4, 6);
+		offset = this.#offset[0] === "-" ? offset : -offset;
+		return (/* @__PURE__ */ new Date(this.getTime() - offset * 6e4)).toISOString().slice(0, -1) + this.#offset;
+	}
+	static wrapAsOffsetDateTime(jsDate, offset = "Z") {
+		let date = new TomlDate(jsDate);
+		date.#offset = offset;
+		return date;
+	}
+	static wrapAsLocalDateTime(jsDate) {
+		let date = new TomlDate(jsDate);
+		date.#offset = null;
+		return date;
+	}
+	static wrapAsLocalDate(jsDate) {
+		let date = new TomlDate(jsDate);
+		date.#hasTime = false;
+		date.#offset = null;
+		return date;
+	}
+	static wrapAsLocalTime(jsDate) {
+		let date = new TomlDate(jsDate);
+		date.#hasDate = false;
+		date.#offset = null;
+		return date;
+	}
+};
+//#endregion
+//#region src/extract.ts
+function isDigit(char, base = 10) {
+	return base === 16 ? char > 47 && char < 58 || char > 64 && char < 71 || char > 96 && char < 103 : char > 47 && char < 48 + base;
+}
+function isEndOfValue(char, delim) {
+	return char === 32 || char === 9 || char === 10 || char === 13 || delim && (char === delim || char === 44) || char === 35;
+}
+/** @internal */
+function extractValue(ctx, end) {
+	let errPtr = ctx.p;
+	let c = ctx.s.charCodeAt(ctx.p);
+	if (c === 91 || c === 123) {
+		ctx.d-- || TomlError.x("document contains excessively nested structures. aborting.", ctx);
+		let value = c === 91 ? parseArray(ctx) : parseInlineTable(ctx);
+		ctx.d++;
+		return value;
+	}
+	if (c === 34 || c === 39) return parseString(ctx);
+	if (c === 116) {
+		if (ctx.s.charCodeAt(++ctx.p) !== 114 || ctx.s.charCodeAt(++ctx.p) !== 117 || ctx.s.charCodeAt(++ctx.p) !== 101) TomlError.x("invalid value", ctx, errPtr);
+		return ctx.p++, true;
+	}
+	if (c === 102) {
+		if (ctx.s.charCodeAt(++ctx.p) !== 97 || ctx.s.charCodeAt(++ctx.p) !== 108 || ctx.s.charCodeAt(++ctx.p) !== 115 || ctx.s.charCodeAt(++ctx.p) !== 101) TomlError.x("invalid value", ctx, errPtr);
+		return ctx.p++, false;
+	}
+	if (c === 43 || c === 45) return parseNumber(ctx, ctx.p, ctx.s.charCodeAt(++ctx.p), 44 - c, end);
+	if (ctx.s.charCodeAt(ctx.p + 4) === 45 && ctx.s.charCodeAt(ctx.p + 7) === 45) return parseDate(ctx, c, end);
+	if (ctx.s.charCodeAt(ctx.p + 2) === 58) return parseTime(ctx, c, end);
+	return parseNumber(ctx, ctx.p, c, 0, end);
+}
+function parseNumber(ctx, startPtr, startChr, sign, endChr) {
+	let c = startChr;
+	let state = 0;
+	let hasUnderscores = false;
+	if (c === 105) {
+		if (ctx.s.charCodeAt(++ctx.p) !== 110 || ctx.s.charCodeAt(++ctx.p) !== 102) TomlError.x("invalid value", ctx, startPtr);
+		return ctx.p++, (sign || 1) / 0;
+	}
+	if (c === 110) {
+		if (ctx.s.charCodeAt(++ctx.p) !== 97 || ctx.s.charCodeAt(++ctx.p) !== 110) TomlError.x("invalid value", ctx, startPtr);
+		return ctx.p++, NaN;
+	}
+	if (c === 48) {
+		if (++ctx.p >= ctx.s.length || isEndOfValue(c = ctx.s.charCodeAt(ctx.p), endChr)) return ctx.bi === true ? 0n : 0;
+		if (!sign) {
+			if (c === 120) return parseIntegerBaseN(ctx, startPtr, 16, endChr);
+			else if (c === 98) return parseIntegerBaseN(ctx, startPtr, 2, endChr);
+			else if (c === 111) return parseIntegerBaseN(ctx, startPtr, 8, endChr);
+		}
+		if (c === 46) state = 2;
+		else if (c === 101 || c === 69) state = 4;
+		else TomlError.x("illegal leading zero", ctx, startPtr);
+	} else if (!isDigit(c)) TomlError.x("invalid value", ctx, startPtr);
+	while (++ctx.p < ctx.s.length && (c = ctx.s.charCodeAt(ctx.p), !isEndOfValue(c, endChr))) {
+		if (!state) state = 1;
+		if (c === 95) {
+			if (!(state & 1)) TomlError.x("illegal underscore", ctx);
+			state += 11;
+			hasUnderscores = true;
+		} else if (state === 1 && c === 46) state = 2;
+		else if ((state === 1 || state === 3) && (c === 101 || c === 69)) state = 4;
+		else if (state === 4 && (c === 43 || c === 45)) state = 6;
+		else if (!isDigit(c)) TomlError.x(`illegal character in numeric literal`, ctx);
+		else if (state > 9) state -= 11;
+		else if (!(state & 1)) state++;
+	}
+	if (!state) {
+		let val = (startChr - 48) * (sign || 1);
+		return ctx.bi === true ? BigInt(val) : val;
+	}
+	if (!(state & 1)) TomlError.x("unfinished numeric value", ctx, startPtr);
+	let str = ctx.s.slice(startPtr, ctx.p);
+	if (hasUnderscores) str = str.replaceAll("_", "");
+	return state > 1 ? parseFloat(str) : parseInteger(ctx, str, 10, startPtr);
+}
+function parseIntegerBaseN(ctx, startPtr, base, endChr) {
+	let c, underscore = 1;
+	while (++ctx.p < ctx.s.length && (c = ctx.s.charCodeAt(ctx.p), !isEndOfValue(c, endChr))) if (c === 95) {
+		if (underscore & 1) TomlError.x("illegal underscore", ctx);
+		underscore = 3;
+	} else if (!isDigit(c, base)) TomlError.x(`illegal character in numeric literal`, ctx);
+	else if (underscore & 1) underscore--;
+	if (underscore & 1) TomlError.x("unfinished numeric value", ctx);
+	let str = ctx.s.slice(startPtr + 2, ctx.p);
+	if (underscore) str = str.replaceAll("_", "");
+	return parseInteger(ctx, str, base, startPtr);
+}
+function parseInteger(ctx, str, base, startPtr) {
+	if (ctx.bi !== true) int: {
+		let val = parseInt(str, base);
+		if (!Number.isSafeInteger(val)) {
+			if (ctx.bi) break int;
+			TomlError.x("integer value cannot be represented losslessly", ctx, startPtr);
+		}
+		return val;
+	}
+	return base === 10 ? BigInt(str) : BigInt((base === 2 ? "0b" : base === 8 ? "0o" : "0x") + str);
+}
+function parseDate(ctx, c, endChr) {
+	let startPtr = ctx.p++, unsafeSeparator;
+	if (!isDigit(c) || !isDigit(ctx.s.charCodeAt(ctx.p++)) || !isDigit(ctx.s.charCodeAt(ctx.p++)) || !isDigit(ctx.s.charCodeAt(ctx.p++))) return parseNumber(ctx, ctx.p = startPtr, c, 0, endChr);
+	ctx.p += 5;
+	if (!isDigit(ctx.s.charCodeAt(ctx.p++))) TomlError.x("invalid date-time: date part is malformed", ctx, startPtr);
+	if (ctx.p >= ctx.s.length || ((c = ctx.s.charCodeAt(ctx.p)) !== 32 || (unsafeSeparator = true, !isDigit(ctx.s.charCodeAt(ctx.p + 1)))) && c !== 84 && c !== 116) return readDate(ctx, ctx.s.slice(startPtr, ctx.p), 3, false, startPtr);
+	if (ctx.s.charCodeAt(ctx.p += 3) !== 58) TomlError.x("invalid date-time: time part is malformed", ctx, startPtr);
+	if (ctx.s.charCodeAt(ctx.p += 3) === 58) ctx.p += 3;
+	if (ctx.s.charCodeAt(ctx.p) === 46) while (isDigit(ctx.s.charCodeAt(++ctx.p)));
+	if (c = ctx.s.charCodeAt(ctx.p)) {
+		if (c === 90 || c === 122) return readDate(ctx, ctx.s.slice(startPtr, ++ctx.p), 1, unsafeSeparator, startPtr, "[+00:00]");
+		if (c === 43 || c === 45) return readDate(ctx, ctx.s.slice(startPtr, ctx.p += 6), 1, unsafeSeparator, startPtr, !ctx.ld && "[" + ctx.s.slice(ctx.p - 6, ctx.p) + "]");
+	}
+	return readDate(ctx, ctx.s.slice(startPtr, ctx.p), 2, unsafeSeparator, startPtr);
+}
+function parseTime(ctx, c, endChr) {
+	let start = ctx.p;
+	if (!isDigit(c) || !isDigit(ctx.s.charCodeAt(++ctx.p))) return parseNumber(ctx, --ctx.p, c, 0, endChr);
+	if (ctx.s.charCodeAt(ctx.p += 4) === 58) ctx.p += 3;
+	if (ctx.s.charCodeAt(ctx.p) === 46) while (isDigit(ctx.s.charCodeAt(++ctx.p)));
+	return readDate(ctx, ctx.s.slice(start, ctx.p), 4, false, start);
+}
+function readDate(ctx, str, type, unsafeDelim, errPtr, temporalSuffix) {
+	if (ctx.ld) {
+		let date = new TomlDate(str, type, unsafeDelim);
+		if (!date.isValid()) TomlError.x("invalid date", ctx, errPtr);
+		return date;
+	}
+	try {
+		if (temporalSuffix) str += temporalSuffix;
+		switch (type) {
+			case 1: return Temporal.ZonedDateTime.from(str);
+			case 2: return Temporal.PlainDateTime.from(str);
+			case 3: return Temporal.PlainDate.from(str);
+			case 4: return Temporal.PlainTime.from(str);
+		}
+	} catch (e) {
+		TomlError.x(e instanceof Error ? e.message : "" + e, ctx, errPtr);
+	}
+}
+//#endregion
+//#region src/util.ts
+/** @internal */
+function skipComment(ctx) {
+	for (; ctx.p < ctx.s.length; ctx.p++) {
+		let c = ctx.s.charCodeAt(ctx.p);
+		if (c === 10) break;
+		if (c === 13 && ctx.s.charCodeAt(ctx.p + 1) === 10) {
+			ctx.p++;
+			break;
+		}
+		if (c < 32 && c !== 9 || c === 127) TomlError.x("control characters are not allowed in comments", ctx);
+	}
+}
+/** @internal */
+function skipVoid(ctx, banNewLines, banComments) {
+	let c;
+	while (ctx.p < ctx.s.length) {
+		while (ctx.p < ctx.s.length && ((c = ctx.s.charCodeAt(ctx.p)) === 32 || c === 9 || !banNewLines && (c === 10 || c === 13 && ctx.s.charCodeAt(ctx.p + 1) === 10))) ctx.p++;
+		if (banComments || c !== 35) break;
+		skipComment(ctx);
+	}
+}
+//#endregion
+//#region src/struct.ts
+/** @internal */
+function parseKey(ctx, end = 61) {
+	let startPtr;
+	let state = 0;
+	let parsed = [];
+	let sliceStart;
+	let c = ctx.s.charCodeAt(startPtr = ctx.p);
+	do
+		if (c === end) {
+			if (!state) TomlError.x("unexpected end of key", ctx);
+			if (state === 1) parsed.push(ctx.s.slice(sliceStart, ctx.p));
+			return ctx.p++, parsed;
+		} else if (c === 46) {
+			if (!state) TomlError.x("illegal empty bare key", ctx);
+			if (state === 1) parsed.push(ctx.s.slice(sliceStart, ctx.p));
+			state = 0;
+		} else if (!state && (c === 34 || c === 39)) {
+			if (c === ctx.s.charCodeAt(ctx.p + 1) && c === ctx.s.charCodeAt(ctx.p + 2)) TomlError.x("illegal quoted key: multiline strings are not allowed", ctx);
+			parsed.push(parseString(ctx));
+			state = 2;
+			ctx.p--;
+		} else if (c === 32 || c === 9) {
+			if (state === 1) {
+				parsed.push(ctx.s.slice(sliceStart, ctx.p));
+				state = 2;
+			}
+		} else if (state === 2 || c < 48 && c !== 45 || c > 57 && c < 65 || c > 90 && c < 97 && c !== 95 || c > 122) TomlError.x("illegal character in key", ctx);
+		else if (!state) {
+			state = 1;
+			sliceStart = ctx.p;
+		}
+	while (c = ctx.s.charCodeAt(++ctx.p));
+	TomlError.x("incomplete key-value: cannot find end of key", ctx, startPtr);
+}
+/** @internal */
+function parseInlineTable(ctx) {
+	let startPtr = ctx.p++;
+	let res = Object.create(null);
+	let seen = /* @__PURE__ */ new Set();
+	let c;
+	while (ctx.p < ctx.s.length) {
+		skipVoid(ctx);
+		if ((c = ctx.s.charCodeAt(ctx.p)) === 125) {
+			ctx.p++;
+			return res;
+		}
+		let k;
+		let t = res;
+		let hasOwn = false;
+		let errPtr = ctx.p;
+		let key = parseKey(ctx);
+		for (let i = 0; i < key.length; i++) {
+			if (i) t = hasOwn ? t[k] : t[k] = Object.create(null);
+			k = key[i];
+			if ((hasOwn = Object.hasOwn(t, k)) && (typeof t[k] !== "object" || seen.has(t[k]))) TomlError.x("trying to redefine an already defined value", ctx, errPtr);
+			let unsafe = k === "__proto__";
+			if (ctx.uk && (unsafe || k === "constructor")) {
+				t = ctx.uk !== 1 && TomlError.x("document contains an unsafe property", ctx, errPtr);
+				break;
+			}
+			if (!hasOwn && unsafe) Object.defineProperty(t, k, {
+				enumerable: true,
+				configurable: true,
+				writable: true
+			});
+		}
+		if (hasOwn) TomlError.x("trying to redefine an already defined value", ctx, errPtr);
+		skipVoid(ctx, true, true);
+		let value = extractValue(ctx, 125);
+		if (t && typeof (t[k] = value) === "object") seen.add(value);
+		skipVoid(ctx);
+		if ((c = ctx.s.charCodeAt(ctx.p++)) === 125) return res;
+		if (c !== 44) TomlError.x("expected comma or end of structure", ctx, ctx.p - 1);
+	}
+	TomlError.x("unfinished table", ctx, startPtr);
+}
+/** @internal */
+function parseArray(ctx) {
+	let startPtr = ctx.p++;
+	let res = [];
+	let c;
+	while (ctx.p < ctx.s.length) {
+		skipVoid(ctx);
+		if ((c = ctx.s.charCodeAt(ctx.p)) === 93) {
+			ctx.p++;
+			return res;
+		}
+		res.push(extractValue(ctx, 93));
+		skipVoid(ctx);
+		if ((c = ctx.s.charCodeAt(ctx.p++)) === 93) return res;
+		if (c !== 44) TomlError.x("expected comma or end of structure", ctx, ctx.p - 1);
+	}
+	TomlError.x("unfinished array", ctx, startPtr);
+}
+//#endregion
+//#region src/parse.ts
+function peekTable(ctx, key, table, meta, type) {
+	let t = table;
+	let m = meta;
+	let k;
+	let hasOwn = false;
+	let state;
+	for (let i = 0; i < key.length; i++) {
+		if (i) {
+			t = hasOwn ? t[k] : t[k] = Object.create(null);
+			m = (state = m[k]).c;
+			if (type === 0 && (state.t === 1 || state.t === 2)) return null;
+			if (state.t === 2) {
+				let l = t.length - 1;
+				t = t[l];
+				m = m[l].c;
+			}
+		}
+		k = key[i];
+		if ((hasOwn = Object.hasOwn(t, k)) && m[k]?.t === 0 && m[k]?.d) return null;
+		if (!hasOwn) {
+			let unsafe = k === "__proto__";
+			if (ctx.uk && (unsafe || k === "constructor")) return false;
+			if (unsafe) {
+				Object.defineProperty(t, k, {
+					enumerable: true,
+					configurable: true,
+					writable: true
+				});
+				Object.defineProperty(m, k, {
+					enumerable: true,
+					configurable: true,
+					writable: true
+				});
+			}
+			m[k] = {
+				t: i < key.length - 1 && type === 2 ? 3 : type,
+				d: false,
+				i: 0,
+				c: Object.create(null)
+			};
+		}
+	}
+	state = m[k];
+	if (state.t !== type && !(type === 1 && state.t === 3)) return null;
+	if (type === 2) {
+		if (!state.d) {
+			state.d = true;
+			t[k] = [];
+		}
+		t[k].push(t = Object.create(null));
+		state.c[state.i++] = state = {
+			t: 1,
+			d: false,
+			i: 0,
+			c: Object.create(null)
+		};
+	}
+	if (state.d) return null;
+	state.d = true;
+	if (type === 1) t = hasOwn ? t[k] : t[k] = Object.create(null);
+	else if (type === 0 && hasOwn) return null;
+	return [
+		k,
+		t,
+		state.c
+	];
+}
+function validateTablePeek(ctx, peek, ptr) {
+	if (peek === null || ctx.uk === 2) TomlError.x(peek === null ? "trying to redefine an already defined table or value" : "document contains an unsafe property", ctx, ptr);
+}
+function parse(toml, options = {}) {
+	let ctx = {
+		s: toml,
+		p: 0,
+		d: options.maxDepth ?? 1e3,
+		bi: options.integersAsBigInt ?? false,
+		ld: options.useLegacyDate ?? true,
+		uk: options.unsafeKeyBehaviour === "throw" ? 2 : options.unsafeKeyBehaviour === "drop" ? 1 : 0
+	};
+	let res = Object.create(null);
+	let meta = Object.create(null);
+	let tmp;
+	let skipping = false;
+	let tbl = res;
+	let m = meta;
+	if (toml.charCodeAt(0) === 65279) ctx.p++;
+	skipVoid(ctx);
+	while (ctx.p < toml.length) {
+		if (toml.charCodeAt(ctx.p) === 91) {
+			let isTableArray = toml.charCodeAt(++ctx.p) === 91;
+			tmp = ctx.p += +isTableArray;
+			skipping = false;
+			let k = parseKey(ctx, 93);
+			if (isTableArray) {
+				if (toml.charCodeAt(ctx.p) !== 93) TomlError.x("expected end of table array declaration", ctx);
+				ctx.p++;
+			}
+			let p = peekTable(ctx, k, res, meta, isTableArray ? 2 : 1);
+			if (!p) {
+				validateTablePeek(ctx, p, tmp);
+				skipping = true;
+			} else {
+				m = p[2];
+				tbl = p[1];
+			}
+		} else {
+			tmp = ctx.p;
+			let p = peekTable(ctx, parseKey(ctx), tbl, m, 0);
+			if (!p && !skipping) validateTablePeek(ctx, p, tmp);
+			skipVoid(ctx, true, true);
+			let v = extractValue(ctx, void 0);
+			if (p && !skipping) p[1][p[0]] = v;
+		}
+		skipVoid(ctx, true);
+		if (ctx.p < toml.length && (tmp = toml.charCodeAt(ctx.p)) !== 10 && (tmp !== 13 || toml.charCodeAt(ctx.p + 1) !== 10)) TomlError.x("each key-value declaration must be followed by an end-of-line", ctx);
+		skipVoid(ctx);
+	}
+	return res;
+}
+//#endregion
+//#region src/stringify.ts
+let BARE_KEY = /^[a-z0-9-_]+$/i;
+let HAS_WELLFORMED = !!"".isWellFormed;
+function extendedTypeOf(obj) {
+	let type = typeof obj;
+	if (type === "object") {
+		if (Array.isArray(obj)) return "array";
+		if (typeof obj.getUTCDate === "function" && obj instanceof Date) return "date";
+		if (globalThis.Temporal) {
+			if (obj.until) {
+				if (obj instanceof Temporal.ZonedDateTime) return "temporal/tz+uc";
+				if (obj instanceof Temporal.PlainDateTime || obj instanceof Temporal.PlainDate) return "temporal/uc";
+				if (obj instanceof Temporal.PlainTime || obj instanceof Temporal.Instant) return "temporal";
+				if (obj instanceof Temporal.PlainYearMonth) return "temporal/x";
+			} else if (obj.toPlainDate && obj instanceof Temporal.PlainMonthDay || obj.negated && obj instanceof Temporal.Duration) return "temporal/x";
+		}
+	}
+	return type;
+}
+function isArrayOfTables(obj) {
+	for (let i = 0; i < obj.length; i++) if (extendedTypeOf(obj[i]) !== "object") return false;
+	return obj.length != 0;
+}
+function formatWellFormedStringUnchecked(s) {
+	return JSON.stringify(s).replaceAll("", "\\u007f");
+}
+function formatString(s) {
+	return formatWellFormedStringUnchecked(HAS_WELLFORMED ? s.toWellFormed() : s);
+}
+function formatKey(s) {
+	if (BARE_KEY.test(s)) return s;
+	if (HAS_WELLFORMED && !s.isWellFormed()) throw new RangeError("key contains illegal lone surrogates");
+	return formatWellFormedStringUnchecked(s);
+}
+function stringifyValue(val, type, depth, numberAsFloat, strictTemporal) {
+	if (depth === 0) throw new Error("Could not stringify the object: maximum object depth exceeded");
+	switch (type) {
+		case "number":
+			if (isNaN(val)) return "nan";
+			if (val === Infinity) return "inf";
+			if (val === -Infinity) return "-inf";
+			if (Number.isInteger(val) && (numberAsFloat || !Number.isSafeInteger(val))) return val.toFixed(1);
+		case "bigint":
+		case "boolean":
+		case "temporal": return val.toString();
+		case "string": return formatString(val);
+		case "date":
+			if (isNaN(val.getTime())) throw new TypeError("cannot serialize invalid date");
+			return val.toISOString();
+		case "object": return stringifyInlineTable(val, depth, numberAsFloat, strictTemporal);
+		case "array": return stringifyArray(val, depth, numberAsFloat, strictTemporal);
+		case "temporal/tz+uc": if (strictTemporal) {
+			let tz = val.timeZoneId;
+			let tzc = tz.charCodeAt(0);
+			if (tzc !== 43 && tzc !== 45 && (tzc !== 85 && tzc !== 71 && tzc !== 90 && tzc !== 69 || tz !== "UTC" && tz !== "UCT" && tz !== "Universal" && tz !== "Zulu" && !tz.startsWith("GMT") && tz !== "Greenwich" && !tz.startsWith("Etc/"))) throw new TypeError("Temporal objects with an IANA timezone are not allowed in Temporal strict mode");
+		}
+		case "temporal/uc":
+			if (strictTemporal && val.calendarId !== "iso8601") throw new TypeError("Temporal objects with a non-default calendar are not allowed in Temporal strict mode");
+			return val.toString({
+				calendarName: "never",
+				timeZoneName: "never"
+			});
+		case "temporal/x": throw new TypeError("Unsupported " + val[Symbol.toStringTag]);
+	}
+}
+function stringifyInlineTable(obj, depth, numberAsFloat, strictTemporal) {
+	let keys = Object.keys(obj);
+	if (keys.length === 0) return "{}";
+	let res = "{ ";
+	for (let i = 0; i < keys.length; i++) {
+		let k = keys[i];
+		if (i) res += ", ";
+		res += formatKey(k) + " = " + stringifyValue(obj[k], extendedTypeOf(obj[k]), depth - 1, numberAsFloat, strictTemporal);
+	}
+	return res + " }";
+}
+function stringifyArray(array, depth, numberAsFloat, strictTemporal) {
+	if (array.length === 0) return "[]";
+	let res = "[ ";
+	for (let i = 0; i < array.length; i++) {
+		if (i) res += ", ";
+		if (array[i] === null || array[i] === void 0) throw new TypeError("arrays cannot contain null or undefined values");
+		res += stringifyValue(array[i], extendedTypeOf(array[i]), depth - 1, numberAsFloat, strictTemporal);
+	}
+	return res + " ]";
+}
+function stringifyArrayTable(array, key, depth, numberAsFloat, strictTemporal) {
+	if (depth === 0) throw new Error("Could not stringify the object: maximum object depth exceeded");
+	let res = "";
+	for (let i = 0; i < array.length; i++) {
+		res += `${res && "\n"}[[${key}]]\n`;
+		res += stringifyTable(0, array[i], key, depth, numberAsFloat, strictTemporal);
+	}
+	return res;
+}
+function stringifyTable(tableKey, obj, prefix, depth, numberAsFloat, strictTemporal) {
+	if (depth === 0) throw new Error("Could not stringify the object: maximum object depth exceeded");
+	let preamble = "";
+	let tables = "";
+	let keys = Object.keys(obj);
+	for (let i = 0; i < keys.length; i++) {
+		let k = keys[i];
+		if (obj[k] !== null && obj[k] !== void 0) {
+			let type = extendedTypeOf(obj[k]);
+			if (type === "symbol" || type === "function") throw new TypeError(`cannot serialize values of type '${type}'`);
+			let key = formatKey(k);
+			if (type === "array" && isArrayOfTables(obj[k])) tables += (tables && "\n") + stringifyArrayTable(obj[k], prefix ? `${prefix}.${key}` : key, depth - 1, numberAsFloat, strictTemporal);
+			else if (type === "object") {
+				let tblKey = prefix ? `${prefix}.${key}` : key;
+				tables += (tables && "\n") + stringifyTable(tblKey, obj[k], tblKey, depth - 1, numberAsFloat, strictTemporal);
+			} else {
+				preamble += key;
+				preamble += " = ";
+				preamble += stringifyValue(obj[k], type, depth, numberAsFloat, strictTemporal);
+				preamble += "\n";
+			}
+		}
+	}
+	if (tableKey && (preamble || !tables)) preamble = preamble ? `[${tableKey}]\n${preamble}` : `[${tableKey}]`;
+	return preamble && tables ? `${preamble}\n${tables}` : preamble || tables;
+}
+function stringify(obj, { maxDepth = 1e3, numbersAsFloat = false, strictTemporal = false } = {}) {
+	if (extendedTypeOf(obj) !== "object") throw new TypeError("stringify can only be called with an object");
+	let str = stringifyTable(0, obj, "", maxDepth, numbersAsFloat, strictTemporal);
+	if (str[str.length - 1] !== "\n") return str + "\n";
+	return str;
+}
+//#endregion
+//#region src/index.ts
+/** @deprecated use `import * as ... from 'smol-toml'` instead */
+var src_default = {
+	parse,
+	stringify,
+	TomlDate,
+	TomlError
+};
+//#endregion
+exports.TomlDate = TomlDate;
+exports.TomlError = TomlError;
+exports["default"] = src_default;
+exports.parse = parse;
+exports.stringify = stringify;
+
+
 /***/ })
 
 /******/ 	});
@@ -3801,7 +5799,7 @@ exports.suggestSimilar = suggestSimilar;
 /******/ 		// Execute the module function
 /******/ 		var threw = true;
 /******/ 		try {
-/******/ 			__webpack_modules__[moduleId](module, module.exports, __nccwpck_require__);
+/******/ 			__webpack_modules__[moduleId].call(module.exports, module, module.exports, __nccwpck_require__);
 /******/ 			threw = false;
 /******/ 		} finally {
 /******/ 			if(threw) delete __webpack_module_cache__[moduleId];
@@ -3816,28 +5814,12 @@ exports.suggestSimilar = suggestSimilar;
 /******/ 	if (typeof __nccwpck_require__ !== 'undefined') __nccwpck_require__.ab = __dirname + "/";
 /******/ 	
 /************************************************************************/
-var __webpack_exports__ = {};
-// This entry need to be wrapped in an IIFE because it need to be in strict mode.
-(() => {
-"use strict";
-var exports = __webpack_exports__;
-
-/*
- * SPDX-FileCopyrightText: 2026 Kevin de Jong <monkaii@hotmail.com>
- * SPDX-License-Identifier: MIT
- */
-Object.defineProperty(exports, "__esModule", ({ value: true }));
-const commander_1 = __nccwpck_require__(909);
-const version_1 = __nccwpck_require__(311);
-const program = new commander_1.Command();
-program
-    .name("secret-me")
-    .description("Flags secrets, tokens and passwords before they leave your machine")
-    .version(version_1.VERSION);
-program.parse();
-
-})();
-
-module.exports = __webpack_exports__;
+/******/ 	
+/******/ 	// startup
+/******/ 	// Load entry module and return exports
+/******/ 	// This entry module is referenced by other modules so it can't be inlined
+/******/ 	var __webpack_exports__ = __nccwpck_require__(921);
+/******/ 	module.exports = __webpack_exports__;
+/******/ 	
 /******/ })()
 ;
