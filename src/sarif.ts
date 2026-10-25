@@ -5,8 +5,8 @@
 
 import * as sarif from "@dev-build-deploy/sarif-it";
 
-import { Finding } from "./finding";
-import { VERSION } from "./version";
+import { Finding } from "./finding.js";
+import { VERSION } from "./version.js";
 
 /** The findings as a SARIF 2.1.0 log (for GitHub code scanning). Values stay redacted. */
 export function toSarif(findings: Finding[]): object {

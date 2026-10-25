@@ -8,10 +8,12 @@ import * as fs from "node:fs";
 import * as os from "node:os";
 import * as path from "node:path";
 
-import { scan } from "../src/scanner";
+import { jest } from "@jest/globals";
 
-const FIXTURES = path.join(__dirname, "fixtures");
-const CLI = path.join(__dirname, "..", "lib", "cli", "index.js");
+import { scan } from "../src/scanner.js";
+
+const FIXTURES = path.join(import.meta.dirname, "fixtures");
+const CLI = path.join(import.meta.dirname, "..", "lib", "cli", "index.js");
 const RULES = [
   "secret-me-anthropic-key",
   "secret-me-github-token",

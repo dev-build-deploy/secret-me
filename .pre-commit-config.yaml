@@ -38,3 +38,10 @@ repos:
     language: system
     files: ^\.github/(dependabot\.yml|\.commit-me\.json)$
     pass_filenames: false
+  # The bin wrapper and the Claude plugin must still load the bundles (an ESM bundle cannot be `require`d).
+  - id: smoke-bin
+    name: bin/secret-me and the plugin bundle run
+    entry: node scripts/smoke-bin.mjs
+    language: system
+    files: ^(bin/|lib/|claude-plugin/bundle/|package\.json$)
+    pass_filenames: false

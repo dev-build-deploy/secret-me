@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { ConfigError, mergeConfig, toToml } from "../src/config";
+import { ConfigError, mergeConfig, toToml } from "../src/config.js";
 
 type Rule = { id: string };
 

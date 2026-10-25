@@ -9,9 +9,9 @@ import * as os from "node:os";
 import * as path from "node:path";
 import { promisify } from "node:util";
 
-import { loadConfig, toToml } from "./config";
-import { Finding, redact, ROTATE_NOTE } from "./finding";
-import { resolveGitleaks } from "./gitleaks";
+import { loadConfig, toToml } from "./config.js";
+import { Finding, redact, ROTATE_NOTE } from "./finding.js";
+import { resolveGitleaks } from "./gitleaks.js";
 
 const run = promisify(execFile);
 
