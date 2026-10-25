@@ -1,6 +1,6 @@
 {
   "name": "secret-me",
-  "version": "0.0.1",
+  "version": "0.1.0",
   "private": false,
   "description": "Flags secrets, tokens and passwords before they leave your machine: a gitleaks wrapper for the CLI, a pre-commit hook, a GitHub Action and a Claude Code plugin",
   "author": "Kevin de Jong",
@@ -23,7 +23,7 @@
     "build:action": "ncc build -o lib/action src/entrypoints/action.ts",
     "build:plugin": "ncc build -o claude-plugin/bundle src/entrypoints/cli.ts",
     "test": "jest --coverage",
-    "lint": "eslint src test",
+    "lint": "eslint src test/*.ts",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
   },
   "bin": {

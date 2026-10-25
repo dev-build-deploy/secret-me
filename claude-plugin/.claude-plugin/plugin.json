@@ -1,0 +1,8 @@
+{
+  "name": "secret-me",
+  "version": "0.1.0",
+  "description": "Claude Code companion of SecretMe: denies a Write or Edit that would put a secret, token or password in a file, and a git commit or push that would carry one (gitleaks, redacted findings)",
+  "author": { "name": "Kevin de Jong" },
+  "homepage": "https://github.com/dev-build-deploy/secret-me",
+  "license": "MIT"
+}

@@ -5,10 +5,38 @@ name: 'SecretMe - secret, token and password leak detection'
 author: 'Kevin de Jong'
 description: >
   Flags secrets, tokens and passwords in your commits before they leak (gitleaks, with org rules).
+  Pull request: its commits; push: the pushed commits; schedule and manual runs: the full history.
 
 branding:
   icon: 'lock'
   color: 'white'
+
+inputs:
+  token:
+    description: 'GitHub token, used to post the sticky pull request comment (eg. github.token)'
+    required: false
+  comment:
+    description: 'Post one sticky comment (redacted) on the pull request'
+    required: false
+    default: 'true'
+  fail-on-findings:
+    description: 'Fail the step when a secret is found'
+    required: false
+    default: 'true'
+  config:
+    description: 'Path to the configuration file; by default ".secret-me.toml" is used.'
+    required: false
+  sarif-file:
+    description: 'Write a SARIF report to this path (upload it with github/codeql-action/upload-sarif)'
+    required: false
+
+outputs:
+  count:
+    description: 'Number of secrets found'
+  findings:
+    description: 'The findings as JSON (redacted)'
+  sarif-file:
+    description: 'Path of the SARIF report, when requested'
 
 runs:
   using: 'node24'
