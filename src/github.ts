@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Finding, ROTATE_NOTE } from "./finding";
-import { Target } from "./scanner";
+import { Finding, ROTATE_NOTE } from "./finding.js";
+import { Target } from "./scanner.js";
 
 /** Hidden marker of the one sticky pull request comment. */
 export const COMMENT_MARKER = "<!-- secret-me -->";

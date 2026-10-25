@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { VERSION } from "../src/version";
+import { VERSION } from "../src/version.js";
 
 describe("version", () => {
   it("is a semantic version", () => {

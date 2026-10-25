@@ -37,13 +37,12 @@ export default [...fixupConfigRules(compat.extends(
     languageOptions: {
         globals: {
             ...globals.node,
-            ...globals.commonjs,
             ...jest.environments.globals.globals,
         },
 
         parser: tsParser,
         ecmaVersion: "latest",
-        sourceType: "commonjs",
+        sourceType: "module",
 
         parserOptions: {
             project: "./tsconfig.json",
@@ -121,10 +120,6 @@ export default [...fixupConfigRules(compat.extends(
             },
         }],
 
-        "import/extensions": ["error", "never", {
-            pattern: {
-                json: "ignorePackages",
-            },
-        }],
+        "import/extensions": "off",
     },
 }];

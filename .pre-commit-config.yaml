@@ -19,3 +19,29 @@ repos:
     language: system
     pass_filenames: false
     always_run: true
+
+# Local checks: each prevents a CI failure we have had.
+- repo: local
+  hooks:
+  # The committed bundles must be what the staged source builds to (also fails when
+  # ncc stubs an ESM-only package, see scripts/check-bundle.mjs).
+  - id: check-lib
+    name: lib, claude-plugin/bundle is rebuilt from the staged source
+    entry: node scripts/check-lib.mjs lib claude-plugin/bundle
+    language: system
+    files: ^(src/|package\.json$|package-lock\.json$|tsconfig\.json$)
+    pass_filenames: false
+  # Dependabot's commit messages must pass .github/.commit-me.json.
+  - id: check-dependabot
+    name: dependabot.yml commit messages are allowed by .commit-me.json
+    entry: node scripts/check-dependabot.mjs
+    language: system
+    files: ^\.github/(dependabot\.yml|\.commit-me\.json)$
+    pass_filenames: false
+  # The bin wrapper and the Claude plugin must still load the bundles (an ESM bundle cannot be `require`d).
+  - id: smoke-bin
+    name: bin/secret-me and the plugin bundle run
+    entry: node scripts/smoke-bin.mjs
+    language: system
+    files: ^(bin/|lib/|claude-plugin/bundle/|package\.json$)
+    pass_filenames: false

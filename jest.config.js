@@ -4,8 +4,12 @@ SPDX-FileCopyrightText: 2026 Kevin de Jong <monkaii@hotmail.com>
 SPDX-License-Identifier: CC0-1.0
 */
 
-module.exports = {
-  transform: { "^.+\\.(t|j)sx?$": "@swc/jest" },
+// ESM: run with `node --experimental-vm-modules` (see the `test` script); swc compiles the tests as ESM and the
+// mapper strips the `.js` extension nodenext needs on relative imports, so jest finds the `.ts` sources.
+export default {
+  extensionsToTreatAsEsm: [".ts"],
+  transform: { "^.+\\.ts$": ["@swc/jest", { module: { type: "es6" } }] },
+  moduleNameMapper: { "^(\\.{1,2}/.*)\\.js$": "$1" },
   testEnvironment: "node",
   testRegex: "/test/.*\\.(test|spec)?\\.(ts|tsx)$",
   moduleFileExtensions: ["ts", "tsx", "js", "jsx", "json", "node"]
