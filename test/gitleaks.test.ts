@@ -8,6 +8,7 @@ import {
   GITLEAKS_CHECKSUMS,
   GITLEAKS_VERSION,
   platformAsset,
+  verifyChecksum,
   resolveGitleaks,
   binaryVersion,
 } from "../src/gitleaks";
@@ -28,6 +29,10 @@ describe("gitleaks pin", () => {
     expect(platformAsset("darwin", "arm64")).toBe("darwin_arm64.tar.gz");
     expect(platformAsset("win32", "x64")).toBe("windows_x64.zip");
     expect(() => platformAsset("freebsd", "x64")).toThrow(/no gitleaks release/);
+  });
+
+  it("refuses an archive that does not match the pinned checksum", () => {
+    expect(() => verifyChecksum(Buffer.from("tampered"), "linux_x64.tar.gz")).toThrow(/checksum mismatch/);
   });
 
   it("resolves a gitleaks that is at least the pinned version", async () => {

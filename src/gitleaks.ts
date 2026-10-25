@@ -63,6 +63,14 @@ export async function binaryVersion(bin: string): Promise<string | undefined> {
   }
 }
 
+/** Refuses an archive whose SHA-256 is not the pinned one. */
+export function verifyChecksum(archive: Buffer, suffix: string, source = suffix): void {
+  const sum = createHash("sha256").update(archive).digest("hex");
+  if (sum !== GITLEAKS_CHECKSUMS[suffix]) {
+    throw new Error(`checksum mismatch for ${source} (got ${sum}); refusing to run it`);
+  }
+}
+
 async function download(url: string): Promise<Buffer> {
   const res = await fetch(url, { redirect: "follow" });
   if (!res.ok) throw new Error(`download failed (${res.status}): ${url}`);
@@ -87,16 +95,19 @@ export async function resolveGitleaks(): Promise<string> {
   const suffix = platformAsset();
   const url = `https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/gitleaks_${GITLEAKS_VERSION}_${suffix}`;
   const archive = await download(url);
-  const sum = createHash("sha256").update(archive).digest("hex");
-  if (sum !== GITLEAKS_CHECKSUMS[suffix]) {
-    throw new Error(`checksum mismatch for ${url} (got ${sum}); refusing to run it`);
-  }
+  verifyChecksum(archive, suffix, url);
 
+  // Extract in a private folder and move the binary into place: parallel runs must never see a half-written cache.
   fs.mkdirSync(dir, { recursive: true });
-  const archivePath = path.join(dir, `archive.${suffix.endsWith(".zip") ? "zip" : "tar.gz"}`);
-  fs.writeFileSync(archivePath, archive);
-  await run("tar", ["-xf", archivePath, "-C", dir, path.basename(bin)]);
-  fs.rmSync(archivePath);
-  fs.chmodSync(bin, 0o755);
+  const work = fs.mkdtempSync(path.join(dir, "tmp-"));
+  try {
+    const archivePath = path.join(work, `archive.${suffix.endsWith(".zip") ? "zip" : "tar.gz"}`);
+    fs.writeFileSync(archivePath, archive);
+    await run("tar", ["-xf", archivePath, "-C", work, path.basename(bin)]);
+    fs.chmodSync(path.join(work, path.basename(bin)), 0o755);
+    fs.renameSync(path.join(work, path.basename(bin)), bin);
+  } finally {
+    fs.rmSync(work, { recursive: true, force: true });
+  }
   return bin;
 }
