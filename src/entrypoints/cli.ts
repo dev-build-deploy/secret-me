@@ -7,11 +7,11 @@ import * as fs from "node:fs";
 
 import { Command } from "commander";
 
-import { loadConfig, toToml } from "../config";
-import { formatText } from "../finding";
-import { toSarif } from "../sarif";
-import { scan, ScanError, Target } from "../scanner";
-import { VERSION } from "../version";
+import { loadConfig, toToml } from "../config.js";
+import { formatText } from "../finding.js";
+import { toSarif } from "../sarif.js";
+import { scan, ScanError, Target } from "../scanner.js";
+import { VERSION } from "../version.js";
 
 interface ScanFlags {
   staged?: boolean;

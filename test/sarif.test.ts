@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { toSarif } from "../src/sarif";
+import { toSarif } from "../src/sarif.js";
 
 describe("toSarif", () => {
   it("writes a SARIF 2.1.0 log with redacted results", () => {

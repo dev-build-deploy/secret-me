@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { formatText, redact, ROTATE_NOTE } from "../src/finding";
+import { formatText, redact, ROTATE_NOTE } from "../src/finding.js";
 
 describe("redact", () => {
   it("keeps the first 4 characters, then ****", () => {

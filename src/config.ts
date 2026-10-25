@@ -8,7 +8,7 @@ import * as path from "node:path";
 
 import { parse, stringify } from "smol-toml";
 
-import { DEFAULT_CONFIG } from "./defaults";
+import { DEFAULT_CONFIG } from "./defaults.js";
 
 /** The repository's configuration file, at its root. */
 export const CONFIG_FILE = ".secret-me.toml";

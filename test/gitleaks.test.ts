@@ -11,7 +11,7 @@ import {
   verifyChecksum,
   resolveGitleaks,
   binaryVersion,
-} from "../src/gitleaks";
+} from "../src/gitleaks.js";
 
 describe("gitleaks pin", () => {
   it("compares versions", () => {

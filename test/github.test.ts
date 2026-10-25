@@ -3,8 +3,8 @@
  * SPDX-License-Identifier: MIT
  */
 
-import { Finding } from "../src/finding";
-import { commentBody, COMMENT_MARKER, targetFor } from "../src/github";
+import { Finding } from "../src/finding.js";
+import { commentBody, COMMENT_MARKER, targetFor } from "../src/github.js";
 
 describe("targetFor", () => {
   it("scans the commits of a pull request", () => {
