@@ -1,4 +1,4 @@
 {
   "types": [ "build", "chore", "ci", "docs", "style", "refactor", "perf", "test" ],
-  "scopes": [ "cli", "action", "precommit", "plugin", "rules", "config", "deps", "dev-deps", "security" ]
+  "scopes": [ "cli", "action", "precommit", "plugin", "rules", "config", "deps", "deps-dev", "dev-deps", "security" ]
 }
