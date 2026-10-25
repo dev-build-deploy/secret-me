@@ -2,6 +2,7 @@
   "name": "secret-me",
   "version": "0.1.0",
   "private": false,
+  "type": "module",
   "description": "Flags secrets, tokens and passwords before they leave your machine: a gitleaks wrapper for the CLI, a pre-commit hook, a GitHub Action and a Claude Code plugin",
   "author": "Kevin de Jong",
   "license": "MIT",
@@ -23,9 +24,10 @@
     "build:cli": "ncc build -o lib/cli src/entrypoints/cli.ts",
     "build:action": "ncc build -o lib/action src/entrypoints/action.ts",
     "build:plugin": "ncc build -o claude-plugin/bundle src/entrypoints/cli.ts",
-    "test": "jest --coverage",
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --coverage",
     "lint": "eslint src test/*.ts",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\""
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
+    "test:bin": "node scripts/smoke-bin.mjs"
   },
   "bin": {
     "secret-me": "./bin/secret-me"
@@ -34,10 +36,10 @@
     "node": ">=24"
   },
   "dependencies": {
-    "@actions/core": "^1.11.1",
-    "@actions/github": "^6.0.1",
+    "@actions/core": "^3",
+    "@actions/github": "^9",
     "@dev-build-deploy/sarif-it": "^0.2.1",
-    "commander": "^12.1.0",
+    "commander": "^15",
     "smol-toml": "^1.9.1"
   },
   "devDependencies": {
@@ -58,6 +60,7 @@
     "jest": "^30.5.2",
     "npm-run-all2": "^9.0.4",
     "prettier": "^3.9.10",
-    "typescript": "^6.0.3"
+    "typescript": "^6.0.3",
+    "@jest/globals": "^30.5.2"
   }
 }

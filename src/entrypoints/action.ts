@@ -8,10 +8,10 @@ import * as fs from "node:fs";
 import * as core from "@actions/core";
 import * as github from "@actions/github";
 
-import { formatText, Finding } from "../finding";
-import { commentBody, COMMENT_MARKER, EventInfo, targetFor } from "../github";
-import { toSarif } from "../sarif";
-import { scan } from "../scanner";
+import { formatText, Finding } from "../finding.js";
+import { commentBody, COMMENT_MARKER, EventInfo, targetFor } from "../github.js";
+import { toSarif } from "../sarif.js";
+import { scan } from "../scanner.js";
 
 async function upsertComment(token: string, findings: Finding[]): Promise<void> {
   const pr = github.context.payload.pull_request;
